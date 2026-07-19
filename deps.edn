@@ -1,0 +1,8 @@
+;; metsuke is portable .cljc (ClojureScript-first, per repo-wide runtime
+;; priority: kotoba wasm > clojurewasm > ClojureScript > nbb, JVM/bb
+;; downgraded). This deps.edn is a compat shim ONLY, so a JVM `clojure`
+;; invocation can lint/run the .cljc as plain Clojure if ever needed — the
+;; canonical way to run this repo's tests is `nbb test/run_tests.cljs`
+;; (see README.md), not `clojure -M:test`.
+{:paths ["src" "test"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}}}

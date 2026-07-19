@@ -1,0 +1,49 @@
+(ns metsuke.io
+  "The documented G1 read seam — the ONLY place in this codebase that reads
+  a file. Everything downstream (score.cljc / policy.cljc / llm.cljc /
+  ledger.cljc / pipeline.cljc) is pure `.cljc` and takes plain data.
+
+  Plain `.cljs` (nbb-only, Node `fs`), not `.cljc` — file I/O is inherently
+  platform-specific, the same exception kanjo/dossier take for their own
+  I/O seams (`dossier/companies_house.clj`, plain `.clj` for the same
+  reason). This is the highest-priority runtime that CAN do file I/O per
+  root CLAUDE.md's `.cljc`/runtime ladder (nbb, not JVM/bb).
+
+  Usage (from a repo checkout where kanjo is a sibling west project, the
+  normal superproject layout `orgs/etzhayyim/{com-etzhayyim-kanjo,
+  com-etzhayyim-metsuke}`):
+
+    nbb -e \"(require '[metsuke.io :as io]) (io/read-kanjo-facts \\\"../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn\\\")\"
+
+  Only reads kanjo's own published Datom files (G1 upstream-only) — never a
+  paid terminal, never a web fetch. No credentials, no network."
+  (:require ["node:fs" :as fs]
+            [clojure.edn :as edn]))
+
+(defn slurp-edn
+  "Reads `path` and edn/read-string's it. Throws if the file doesn't exist
+  or doesn't parse — this seam does not silently degrade to an empty
+  dataset (that would be exactly the kind of fabricated coverage G8
+  forbids; an empty result must come from an explicit, visible failure)."
+  [path]
+  (edn/read-string (.readFileSync fs path "utf8")))
+
+(defn read-kanjo-facts
+  "path -> the seq of :fin.fact/* maps in a kanjo facts.merged.kotoba.edn-
+  shaped file (a bare vector of fact maps, kanjo's own on-disk shape)."
+  [path]
+  (slurp-edn path))
+
+(defn read-kanjo-filings
+  "Same shape, for a file of :fin.filing/* maps (kanjo ships filings and
+  facts in the SAME facts.merged.kotoba.edn — both :fin.filing/* and
+  :fin.fact/* entities appear in the one vector; this fn filters for the
+  filing entities so callers can pass the same path to both this and
+  `read-kanjo-facts`)."
+  [path]
+  (filterv #(contains? % :fin.filing/id) (slurp-edn path)))
+
+(defn read-kanjo-fact-rows
+  "path -> :fin.fact/* entities only, from the same merged file."
+  [path]
+  (filterv #(contains? % :fin.fact/id) (slurp-edn path)))

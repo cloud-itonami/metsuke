@@ -1,0 +1,22 @@
+(ns metsuke.facts-test
+  (:require [clojure.test :refer [deftest testing is]]
+            [metsuke.facts :as facts]))
+
+(deftest allowed-classes-test
+  (is (facts/class-allowed? :kanjo/fin-fact))
+  (is (facts/class-allowed? :kanjo/fin-filing))
+  (is (facts/class-allowed? :kanjo/fin-metric))
+  (is (facts/class-allowed? :kanjo/fin-agg))
+  (is (facts/class-allowed? :metsuke/score)))
+
+(deftest disallowed-classes-rejected-test
+  (testing "G1 — anything not in the closed catalog is rejected, e.g. an LLM citing web-search or a paid terminal"
+    (is (not (facts/class-allowed? :web-search)))
+    (is (not (facts/class-allowed? :inference)))
+    (is (not (facts/class-allowed? :paid-terminal)))
+    (is (not (facts/class-allowed? :social-media)))))
+
+(deftest coverage-is-honest-test
+  (let [c (facts/coverage)]
+    (is (= 5 (:source-count c)))
+    (is (string? (:note c)))))

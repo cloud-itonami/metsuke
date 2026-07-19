@@ -1,0 +1,3 @@
+;; nbb.edn — classpath config so plain `nbb <path>` resolves `metsuke.*` and
+;; `metsuke.fixtures.*` without needing an explicit --classpath flag.
+{:paths ["src" "test"]}

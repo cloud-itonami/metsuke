@@ -1,0 +1,92 @@
+(ns metsuke.policy-test
+  "Adversarial governor tests — hand-constructed proposals designed to
+  violate each HARD check, proving the MetsukeGovernor (not the generator's
+  good behavior) is what actually enforces G1/G3/G4/G5/G6."
+  (:require [clojure.test :refer [deftest testing is]]
+            [clojure.set :as set]
+            [metsuke.methods.policy :as policy]))
+
+(def clean-proposal
+  {:op :score/register
+   :subject {:kind :company :id "org.corp.jp.example" :fiscal-year 2025}
+   :citations [{:id "fact.example.2025.revenue" :class :kanjo/fin-fact}]
+   :composite-z 1.2
+   :flagged? false})
+
+(deftest happy-path-clean-proposal-test
+  (let [{:keys [verdict disposition]} (policy/govern clean-proposal)]
+    (is (:ok? verdict))
+    (is (not (:hard? verdict)))
+    (is (= :recorded disposition))))
+
+(deftest g3-missing-citation-rejected-test
+  (testing "a proposal with zero citations is a HARD source-basis violation, not a soft flag"
+    (let [proposal (assoc clean-proposal :citations [])
+          {:keys [verdict disposition]} (policy/govern proposal)]
+      (is (not (:ok? verdict)))
+      (is (:hard? verdict))
+      (is (some #(= :source-basis (:rule %)) (:violations verdict)))
+      (is (= :hold disposition)))))
+
+(deftest g1-upstream-only-rejected-test
+  (testing "a citation outside the allowed kanjo/metsuke catalog (e.g. a web-search or paid-terminal class) is rejected"
+    (let [proposal (assoc clean-proposal :citations [{:id "some-search-result" :class :web-search}])
+          {:keys [verdict disposition]} (policy/govern proposal)]
+      (is (not (:ok? verdict)))
+      (is (some #(= :upstream-only (:rule %)) (:violations verdict)))
+      (is (= :hold disposition)))))
+
+(deftest g4-named-individual-key-rejected-test
+  (testing "a proposal smuggling an individual-shaped field is rejected even though the schema has no such field"
+    (let [proposal (assoc clean-proposal :officer-name "Jane Smith")
+          {:keys [verdict disposition]} (policy/govern proposal)]
+      (is (not (:ok? verdict)))
+      (is (some #(= :no-individuals (:rule %)) (:violations verdict)))
+      (is (= :hold disposition)))))
+
+(deftest g4-wrong-subject-kind-rejected-test
+  (testing "a proposal whose subject is :kind :individual (not :company) is rejected"
+    (let [proposal (assoc clean-proposal :subject {:kind :individual :id "person-1"})
+          {:keys [verdict disposition]} (policy/govern proposal)]
+      (is (not (:ok? verdict)))
+      (is (some #(= :no-individuals (:rule %)) (:violations verdict))))))
+
+(deftest g5-banned-declarative-fraud-predicate-rejected-test
+  (testing "a proposal whose :text declaratively asserts wrongdoing is rejected outright"
+    (let [proposal (assoc clean-proposal :text "org.corp.jp.example committed fraud in FY2025.")
+          {:keys [verdict disposition]} (policy/govern proposal)]
+      (is (not (:ok? verdict)))
+      (is (some #(= :banned-predicate (:rule %)) (:violations verdict)))
+      (is (= :hold disposition)))))
+
+(deftest g5-unhedged-text-rejected-test
+  (testing "text with no banned phrase but also no hedge marker at all is rejected (declarative-by-omission)"
+    (let [proposal (assoc clean-proposal :text "Revenue grew substantially this year for unknown reasons.")
+          {:keys [verdict]} (policy/govern proposal)]
+      (is (not (:ok? verdict)))
+      (is (some #(= :missing-hedge-marker (:rule %)) (:violations verdict))))))
+
+(deftest g5-properly-hedged-text-passes-test
+  (let [proposal (assoc clean-proposal
+                        :text "This is a statistical anomaly and a candidate for closer review; not established from public filings alone.")
+        {:keys [verdict disposition]} (policy/govern proposal)]
+    (is (:ok? verdict))
+    (is (= :recorded disposition))))
+
+(deftest g6-flagged-always-holds-even-when-clean-test
+  (testing "G6 — a :flagged? true proposal is ALWAYS :hold, even when it passes every other check cleanly (structural, not a violation-driven hold)"
+    (let [proposal (assoc clean-proposal
+                          :flagged? true
+                          :text "This is a statistical anomaly and a candidate for closer review; not established from public filings alone.")
+          {:keys [verdict disposition]} (policy/govern proposal)]
+      (is (:ok? verdict) "the proposal itself is clean...")
+      (is (= :hold disposition) "...but disposition is STILL :hold because :flagged? is true — no code path bypasses this"))))
+
+(deftest disposition-has-no-third-outcome-test
+  (testing "disposition is provably a 2-valued function: {:recorded :hold} only, across a spread of proposals"
+    (let [proposals [clean-proposal
+                      (assoc clean-proposal :flagged? true)
+                      (assoc clean-proposal :citations [])
+                      (assoc clean-proposal :text "committed fraud")]
+          outcomes (into #{} (map #(:disposition (policy/govern %))) proposals)]
+      (is (set/subset? outcomes #{:recorded :hold})))))

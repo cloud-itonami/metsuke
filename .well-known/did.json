@@ -1,0 +1,12 @@
+{
+  "@context": ["https://www.w3.org/ns/did/v1"],
+  "id": "did:web:etzhayyim.github.io:com-etzhayyim-metsuke",
+  "alsoKnownAs": ["at://metsuke.etzhayyim.com"],
+  "service": [
+    {
+      "id": "#metsuke_fdp",
+      "type": "MetsukeFeedGenerator",
+      "serviceEndpoint": "https://metsuke.etzhayyim.com"
+    }
+  ]
+}

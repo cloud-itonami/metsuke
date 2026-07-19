@@ -1,0 +1,14 @@
+;; 目付 (metsuke) — actor identity stub.
+;;
+;; R0 is design-only and has NO self-publish pipeline wired (no atproto/kototama
+;; bundle, unlike kanjo's actor.edn). This file exists only so the DID below is
+;; discoverable at the same relative path convention other etzhayyim actors use;
+;; wiring a real publish pipeline is an explicit R1+ follow-up (see MATURITY.md).
+;;
+;; Runtime note: kanjo's own actor.edn shells out via "bb" (babashka), which is
+;; retired as a script host in this monorepo (ADR-2607173000 / ADR-2607181900).
+;; metsuke does not replicate that — there is no :regen here to replicate it with.
+{:did        "did:web:etzhayyim.github.io:com-etzhayyim-metsuke"
+ :handle     "metsuke.etzhayyim.com"
+ :graph-type "com.etzhayyim.metsuke.graph"
+ :published  "2026-07-20"}
