@@ -1,0 +1,88 @@
+name: Rescan
+
+# Weekly re-score of kanjo's PUBLISHED data/facts.merged.kotoba.edn (G1
+# upstream-only, read-only — this workflow NEVER writes to kanjo). Runs one
+# day AFTER kanjo's own weekly EDGAR-refresh workflow (Tuesday, vs kanjo's
+# Monday), so it is very likely scanning kanjo's freshest main without any
+# cross-repo repository_dispatch wiring or stored PAT — a same-repo,
+# offset-schedule design is enough here because kanjo's refresh is itself
+# weekly, not something this needs to react to within minutes. This
+# workflow NEVER auto-merges: it only opens a PR for human review when the
+# flagged-row SET actually changed, and a failing test suite fails the
+# workflow instead of opening a bad PR. Every flagged row is a STATISTICAL
+# OBSERVATION (see reports/latest-scan.md's own disclaimer,
+# src/metsuke/methods/report.cljc) — never an assertion of wrongdoing.
+on:
+  schedule:
+    - cron: '0 9 * * 2' # Tuesday 09:00 UTC — one day after kanjo's Monday refresh
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  rescan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout metsuke
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js (for nbb)
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Install nbb
+        run: npm install -g nbb
+
+      - name: Run test suite (must stay green — a red run is the correct outcome, not a silently-bad PR)
+        run: nbb test/run_tests.cljs
+
+      - name: Fetch kanjo's latest main (public repo, read-only, no auth)
+        run: |
+          git clone --depth 1 https://github.com/etzhayyim/com-etzhayyim-kanjo.git /tmp/kanjo-snapshot
+          echo "kanjo_sha=$(git -C /tmp/kanjo-snapshot rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Score kanjo's data + generate report
+        run: |
+          nbb bin/report.cljs /tmp/kanjo-snapshot/data/facts.merged.kotoba.edn \
+            --kanjo-sha "$kanjo_sha" \
+            --kanjo-commit-url "https://github.com/etzhayyim/com-etzhayyim-kanjo/commit/$kanjo_sha" \
+            | tee /tmp/report-run.log
+
+      - name: Check whether the flagged-row set changed
+        id: diff
+        run: |
+          if grep -q '^FLAGGED-SET-CHANGED true$' /tmp/report-run.log; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "flagged-row set unchanged (company+fiscal-year+composite-z, rounded to 2dp) — skipping PR (no-op, no noise)"
+          fi
+
+      - name: Compute run metadata
+        if: steps.diff.outputs.changed == 'true'
+        id: meta
+        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Build PR body
+        if: steps.diff.outputs.changed == 'true'
+        run: cp reports/latest-scan.md /tmp/rescan-pr-body.md
+
+      - name: Open PR (never auto-merged — human review required)
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "ci: weekly rescan (${{ steps.meta.outputs.date }})"
+          branch: ci/rescan-${{ steps.meta.outputs.date }}
+          delete-branch: true
+          title: "ci: weekly rescan (${{ steps.meta.outputs.date }})"
+          body-path: /tmp/rescan-pr-body.md
+          add-paths: reports/
+          labels: |
+            automated
+            rescan
