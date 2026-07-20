@@ -10,7 +10,8 @@
          'metsuke.score-test
          'metsuke.policy-test
          'metsuke.ledger-test
-         'metsuke.pipeline-test)
+         'metsuke.pipeline-test
+         'metsuke.report-test)
 
 (let [{:keys [fail error]}
       (t/run-tests 'metsuke.facts-test
@@ -18,5 +19,6 @@
                     'metsuke.score-test
                     'metsuke.policy-test
                     'metsuke.ledger-test
-                    'metsuke.pipeline-test)]
+                    'metsuke.pipeline-test
+                    'metsuke.report-test)]
   (js/process.exit (if (pos? (+ fail error)) 1 0)))

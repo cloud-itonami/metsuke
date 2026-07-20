@@ -1,0 +1,99 @@
+#!/usr/bin/env nbb
+;; metsuke report CLI — thin nbb wrapper around metsuke.pipeline/process-facts
+;; + metsuke.methods.report (same G1 read-seam-only convention as
+;; bin/metsuke.cljs; this does not re-implement any scoring logic, it only
+;; formats the SAME process-facts output bin/metsuke.cljs already prints).
+;;
+;; Writes a persisted, git-diffable, history-keeping report so a CI loop can
+;; open a PR from it (bin/metsuke.cljs alone only prints to stdout, which a
+;; workflow can't diff/commit). Every run:
+;;   - reports/latest-scan.md   (overwritten — always the newest snapshot)
+;;   - reports/scans/<date>.md  (NEVER overwritten — one file per scan date;
+;;                               if re-run same day, that date's file IS
+;;                               overwritten, latest-scan.md always matches it)
+;;   - reports/latest-scan.edn  (machine-readable sidecar; next run's --prev-edn)
+;;
+;; Usage:
+;;   nbb bin/report.cljs <path-to-kanjo-facts.merged.kotoba.edn> \
+;;     [--kanjo-sha SHA] [--kanjo-commit-url URL] [--out-dir DIR] [--prev-edn PATH]
+;;
+;; --kanjo-sha SHA        commit SHA of the kanjo data snapshot being scanned
+;;                         (traceability — the report is never left unanchored
+;;                         to a specific upstream state). Defaults to "unknown"
+;;                         if not given (never fabricated).
+;; --out-dir DIR          default "reports"
+;; --prev-edn PATH        default <out-dir>/latest-scan.edn; used as the
+;;                         diff/equality baseline. If the file does not
+;;                         exist, this run is treated as the first-ever scan.
+;;
+;; Prints, as the LAST line of stdout, one of:
+;;   FLAGGED-SET-CHANGED true
+;;   FLAGGED-SET-CHANGED false
+;; (a CI workflow step greps this to decide whether to open a PR — see
+;; .github/workflows/rescan.yml).
+(require '["node:fs" :as fs]
+         '[clojure.edn :as edn]
+         '[metsuke.io :as io]
+         '[metsuke.pipeline :as pipeline]
+         '[metsuke.methods.report :as report])
+
+(defn- arg [args flag default]
+  (let [rest-after (next (drop-while #(not= flag %) args))]
+    (if (seq rest-after) (first rest-after) default)))
+
+(defn- mkdir-p! [dir]
+  (.mkdirSync fs dir #js{:recursive true}))
+
+(defn -main [args]
+  (let [path (first args)]
+    (if-not path
+      (do (println "usage: nbb bin/report.cljs <path-to-kanjo-facts.merged.kotoba.edn> [--kanjo-sha SHA] [--kanjo-commit-url URL] [--out-dir DIR] [--prev-edn PATH]")
+          (js/process.exit 1))
+      (let [kanjo-sha (arg args "--kanjo-sha" "unknown")
+            kanjo-commit-url (arg args "--kanjo-commit-url" nil)
+            out-dir (arg args "--out-dir" "reports")
+            scans-dir (str out-dir "/scans")
+            prev-edn-path (arg args "--prev-edn" (str out-dir "/latest-scan.edn"))
+            scan-date (.slice (.toISOString (js/Date.)) 0 10)
+
+            facts (io/read-kanjo-fact-rows path)
+            filings (io/read-kanjo-filings path)
+            {:keys [scored-rows ledger]} (pipeline/process-facts facts filings)
+            flagged-entries (report/scored-rows->flagged-entries scored-rows)
+            low-confidence-count (count (filter :low-confidence? scored-rows))
+            held-count (count (filter #(= :hold (:disposition %)) ledger))
+
+            prev-data (when (.existsSync fs prev-edn-path)
+                        (edn/read-string (.readFileSync fs prev-edn-path "utf8")))
+            prev-entries (:scan/flagged prev-data)
+            diff (report/diff-flagged prev-entries flagged-entries)
+            changed? (not (report/flagged-sets-equal? prev-entries flagged-entries))
+
+            common {:scan-date scan-date :kanjo-sha kanjo-sha :kanjo-commit-url kanjo-commit-url
+                    :row-count (count scored-rows) :flagged-count (count flagged-entries)
+                    :low-confidence-count low-confidence-count
+                    :ledger-count (count ledger) :held-count held-count
+                    :recorded-count (- (count ledger) held-count)
+                    :flagged-entries flagged-entries}
+            md (report/render-markdown (assoc common :prev-entries prev-entries :diff diff))
+            edn-data (report/render-edn-data common)]
+
+        (println "metsuke report:" (:row-count common) "rows scored,"
+                  (:flagged-count common) "flagged,"
+                  (:low-confidence-count common) "low-confidence,"
+                  (:ledger-count common) "ledger entries ("
+                  (:held-count common) "held," (:recorded-count common) "recorded )")
+        (println "  kanjo snapshot:" kanjo-sha)
+        (println "  new flagged:" (count (:new diff)) " dropped:" (count (:dropped diff))
+                  " composite-z-changed:" (count (:changed diff)))
+
+        (mkdir-p! scans-dir)
+        (.writeFileSync fs (str out-dir "/latest-scan.md") md "utf8")
+        (.writeFileSync fs (str scans-dir "/" scan-date ".md") md "utf8")
+        (.writeFileSync fs (str out-dir "/latest-scan.edn") (str (pr-str edn-data) "\n") "utf8")
+        (println "wrote" (str out-dir "/latest-scan.md") "+" (str scans-dir "/" scan-date ".md")
+                  "+" (str out-dir "/latest-scan.edn"))
+
+        (println (str "FLAGGED-SET-CHANGED " changed?))))))
+
+(-main (vec *command-line-args*))

@@ -1,0 +1,174 @@
+(ns metsuke.methods.report
+  "Pure report-shaping for a scan run — turns `metsuke.pipeline/process-facts`
+  output into (1) a human-reviewable Markdown report and (2) a small
+  machine-readable EDN sidecar, plus a deterministic diff between two runs'
+  flagged sets. This namespace NEVER re-derives or re-scores anything — it
+  only formats/aggregates fields `metsuke.methods.score/score-facts` (via
+  `metsuke.pipeline/process-facts`) already computed, the same
+  no-duplicated-scoring-logic discipline the rest of this repo follows
+  (pipeline.cljc is the ONLY caller of the scoring/ledger machinery; this
+  namespace is downstream of its output, not a second scorer).
+
+  Pure `.cljc` — no file I/O (that stays in `bin/report.cljs`, the thin nbb
+  wrapper, mirroring `metsuke.io`'s G1 read-seam-only convention). Kept
+  deliberately in metsuke's own hedged, falsifiable-hypothesis vocabulary
+  (G2/G5/G6, `metsuke.lexicon`) — a flagged row here is a STATISTICAL
+  OBSERVATION, never an assertion that wrongdoing occurred; whether
+  wrongdoing occurred is outside this actor's scope (kanjo N4 / metsuke
+  G2/G6, both reaffirmed, never weakened by this reporting layer)."
+  (:require [clojure.string :as str]
+            [clojure.set :as set]))
+
+(defn round2
+  "Rounds `x` to 2 decimal places. Composite-z is a float derived from a
+  live re-fetch of kanjo's data; on IDENTICAL input it is exactly
+  reproducible, but this rounding gives the CI diff a documented, sane
+  near-equality tolerance (2 decimal places) rather than comparing raw
+  float bit-patterns, so a run-to-run scan is not treated as \"changed\"
+  over floating-point noise alone."
+  [x]
+  (/ (Math/round (* x 100.0)) 100.0))
+
+(defn flagged-entry
+  "One scored row (from `metsuke.methods.score`) -> the small, stable
+  {:company .. :fiscal-year .. :composite-z ..} shape used for both the
+  report table and the machine-readable diff/equality check. Composite-z is
+  rounded here (see `round2`) — this IS the canonical rounded value used
+  everywhere downstream, not re-rounded per call-site."
+  [{:keys [company fiscal-year composite-z]}]
+  {:company company :fiscal-year fiscal-year :composite-z (round2 composite-z)})
+
+(defn scored-rows->flagged-entries
+  "scored-rows (from `metsuke.pipeline/process-facts`'s :scored-rows) ->
+  flagged entries, sorted composite-z descending (ties broken by company
+  then fiscal-year for a stable, diffable order)."
+  [scored-rows]
+  (->> scored-rows
+       (filter :flagged?)
+       (map flagged-entry)
+       (sort-by (juxt (comp - :composite-z) :company :fiscal-year))
+       vec))
+
+(defn- entry-key [{:keys [company fiscal-year]}] [company fiscal-year])
+
+(defn flagged-sets-equal?
+  "Whether two flagged-entry collections represent the SAME flagged set —
+  compared as sets of {:company :fiscal-year :composite-z} (composite-z
+  already rounded by `flagged-entry`/`round2`), so a run is \"unchanged\"
+  only if the exact same company+fiscal-year rows are flagged AND none of
+  their composite-z values moved by more than the 2-decimal rounding
+  tolerance. `nil`/missing `prev` (no prior committed report — e.g. the
+  very first scan) is NEVER treated as equal to a non-empty `curr`, so the
+  first report always lands."
+  [prev curr]
+  (and (some? prev)
+       (= (set prev) (set curr))))
+
+(defn diff-flagged
+  "prev/curr flagged-entry collections -> {:new [...] :dropped [...]
+  :changed [...]}, keyed by company+fiscal-year (not the whole entry, so a
+  composite-z move on an already-flagged row surfaces as :changed rather
+  than as a spurious new+dropped pair). `:new` = flagged now, not in prev.
+  `:dropped` = flagged in prev, not now. `:changed` = flagged in both, but
+  composite-z moved (post-rounding). `prev` nil is treated as empty (no
+  prior baseline -> everything currently flagged is reported as :new)."
+  [prev curr]
+  (let [prev (or prev [])
+        prev-by-key (into {} (map (juxt entry-key identity)) prev)
+        curr-by-key (into {} (map (juxt entry-key identity)) curr)
+        prev-keys (set (keys prev-by-key))
+        curr-keys (set (keys curr-by-key))]
+    {:new (vec (for [k (sort (set/difference curr-keys prev-keys))]
+                 (curr-by-key k)))
+     :dropped (vec (for [k (sort (set/difference prev-keys curr-keys))]
+                     (prev-by-key k)))
+     :changed (vec (for [k (sort (set/intersection prev-keys curr-keys))
+                          :let [p (prev-by-key k) c (curr-by-key k)]
+                          :when (not= (:composite-z p) (:composite-z c))]
+                     {:company (first k) :fiscal-year (second k)
+                      :from (:composite-z p) :to (:composite-z c)}))}))
+
+(def disclaimer
+  "Repeated verbatim at the top of every report — deliberately built only
+  from `metsuke.lexicon/hedge-markers` vocabulary (statistical anomaly /
+  hypothesis / does not establish...), same discipline as
+  `metsuke.llm/draft-narrative-proposal`'s template."
+  (str "**Statistical observation only.** Every row below is a statistical "
+       "anomaly candidate for closer review under this actor's deterministic "
+       "composite z-score (see `src/metsuke/methods/score.cljc`) — a "
+       "falsifiable hypothesis, not a finding. This does NOT establish that "
+       "wrongdoing occurred; whether wrongdoing occurred is outside this "
+       "actor's scope and cannot be determined from public filings alone "
+       "(kanjo G2/N4, metsuke G2/G6 — both reaffirmed, unweakened by this "
+       "report)."))
+
+(defn- md-table [entries]
+  (if (empty? entries)
+    "_none_\n"
+    (str "| company | fiscal-year | composite-z |\n"
+         "|---|---|---|\n"
+         (str/join "\n" (map (fn [{:keys [company fiscal-year composite-z]}]
+                                (str "| " company " | " fiscal-year " | " composite-z " |"))
+                              entries))
+         "\n")))
+
+(defn- diff-section [diff]
+  (let [{:keys [new dropped changed]} diff]
+    (str "## Changes since last report\n\n"
+         "Newly flagged (candidate for closer review as of this scan, was not previously):\n\n"
+         (md-table new)
+         "\nNo longer flagged (composite-z fell back under threshold, or the row aged out "
+         "of this scan's window — this alone does not clear or resolve anything, it only "
+         "reflects the current statistical computation):\n\n"
+         (md-table dropped)
+         "\nComposite-z moved on an already-flagged row (kanjo data for that company/year "
+         "changed, or the market-wide peer distribution shifted from OTHER companies' data "
+         "changing — this report cannot tell which without a per-axis breakdown):\n\n"
+         (if (empty? changed)
+           "_none_\n"
+           (str "| company | fiscal-year | composite-z (was -> now) |\n"
+                "|---|---|---|\n"
+                (str/join "\n" (map (fn [{:keys [company fiscal-year from to]}]
+                                       (str "| " company " | " fiscal-year " | " from " -> " to " |"))
+                                     changed))
+                "\n")))))
+
+(defn render-markdown
+  "{:scan-date .. :kanjo-sha .. :kanjo-commit-url .. :row-count ..
+    :flagged-count .. :low-confidence-count .. :ledger-count ..
+    :held-count .. :recorded-count .. :flagged-entries .. :prev-entries
+    (nil on first run) :diff ..} -> the full report Markdown string."
+  [{:keys [scan-date kanjo-sha kanjo-commit-url row-count flagged-count
+           low-confidence-count ledger-count held-count recorded-count
+           flagged-entries prev-entries diff]}]
+  (str "# metsuke scan report — " scan-date "\n\n"
+       "**kanjo data snapshot:** commit `" kanjo-sha "`"
+       (if kanjo-commit-url (str " (" kanjo-commit-url ")") "") "\n\n"
+       disclaimer "\n\n"
+       "## Summary\n\n"
+       "- rows scored: " row-count "\n"
+       "- flagged (composite-z >= threshold): " flagged-count "\n"
+       "- low-confidence rows (G8 — thin peer AND trailing coverage): " low-confidence-count "\n"
+       "- ledger entries: " ledger-count " (" held-count " held, " recorded-count " recorded)\n\n"
+       "## Flagged rows (composite-z descending)\n\n"
+       (md-table flagged-entries)
+       "\n"
+       (if (some? prev-entries)
+         (diff-section diff)
+         "## Changes since last report\n\n_no prior committed report — this is the first scan._\n")))
+
+(defn render-edn-data
+  "The plain EDN data map written to `reports/latest-scan.edn` (and each
+  dated snapshot) — the machine-readable half of the report, used by the CI
+  workflow's next run as `prev` for `flagged-sets-equal?`/`diff-flagged`."
+  [{:keys [scan-date kanjo-sha row-count flagged-count low-confidence-count
+           ledger-count held-count recorded-count flagged-entries]}]
+  {:scan/date scan-date
+   :scan/kanjo-sha kanjo-sha
+   :scan/row-count row-count
+   :scan/flagged-count flagged-count
+   :scan/low-confidence-count low-confidence-count
+   :scan/ledger-count ledger-count
+   :scan/held-count held-count
+   :scan/recorded-count recorded-count
+   :scan/flagged flagged-entries})
