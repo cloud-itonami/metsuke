@@ -49,7 +49,7 @@
   an axis, that axis contributes z=0 to the composite and the row is marked
   `:low-confidence? true` with the unscored axis named — never a fabricated
   distribution standing in for real coverage."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; ───────────────────────── named, documented constants ─────────────────────────
 

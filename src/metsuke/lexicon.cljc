@@ -26,7 +26,7 @@
   mention fraud-possibility (G2) while staying safe: the banned list keeps
   it from ever asserting wrongdoing as settled fact, and the hedge-marker
   requirement keeps it phrased as a falsifiable hypothesis."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def banned-predicates
   "Declarative wrongdoing-assertion patterns, JP + EN. Closed, curated list —

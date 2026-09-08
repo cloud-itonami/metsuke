@@ -16,7 +16,7 @@
   OBSERVATION, never an assertion that wrongdoing occurred; whether
   wrongdoing occurred is outside this actor's scope (kanjo N4 / metsuke
   G2/G6, both reaffirmed, never weakened by this reporting layer)."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [clojure.set :as set]))
 
 (defn round2
