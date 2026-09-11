@@ -11,7 +11,7 @@ name: Rescan
 # flagged-row SET actually changed, and a failing test suite fails the
 # workflow instead of opening a bad PR. Every flagged row is a STATISTICAL
 # OBSERVATION (see reports/latest-scan.md's own disclaimer,
-# src/metsuke/methods/report.cljc) — never an assertion of wrongdoing.
+# src/metsuke/methods/report.cljk) — never an assertion of wrongdoing.
 on:
   schedule:
     - cron: '0 9 * * 2' # Tuesday 09:00 UTC — one day after kanjo's Monday refresh
@@ -39,7 +39,7 @@ jobs:
         run: npm install -g nbb
 
       - name: Run test suite (must stay green — a red run is the correct outcome, not a silently-bad PR)
-        run: nbb test/run_tests.cljs
+        run: nbb test/run_tests.cljk
 
       - name: Fetch kanjo's latest main (public repo, read-only, no auth)
         run: |
@@ -48,7 +48,7 @@ jobs:
 
       - name: Score kanjo's data + generate report
         run: |
-          nbb bin/report.cljs /tmp/kanjo-snapshot/data/facts.merged.kotoba.edn \
+          nbb bin/report.cljk /tmp/kanjo-snapshot/data/facts.merged.kotoba.edn \
             --kanjo-sha "$kanjo_sha" \
             --kanjo-commit-url "https://github.com/etzhayyim/com-etzhayyim-kanjo/commit/$kanjo_sha" \
             | tee /tmp/report-run.log
