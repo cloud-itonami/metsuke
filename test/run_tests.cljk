@@ -1,5 +1,5 @@
-#!/usr/bin/env nbb
-;; nbb test/run_tests.cljk — the canonical way to run this repo's test
+#!/usr/bin/env kbb
+;; kbb --backend sci test/run_tests.cljk — the canonical way to run this repo's test
 ;; suite (per root CLAUDE.md: nbb is the script host, not bb/JVM). Requires
 ;; every test namespace and runs them with clojure.test (nbb ships
 ;; clojure.test support directly, no cljs.test alias needed — same pattern

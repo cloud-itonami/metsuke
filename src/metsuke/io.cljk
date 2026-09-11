@@ -13,7 +13,7 @@
   normal superproject layout `orgs/etzhayyim/{com-etzhayyim-kanjo,
   com-etzhayyim-metsuke}`):
 
-    nbb -e \"(require '[metsuke.io :as io]) (io/read-kanjo-facts \\\"../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn\\\")\"
+    kbb --backend sci -e \"(require '[metsuke.io :as io]) (io/read-kanjo-facts \\\"../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn\\\")\"
 
   Only reads kanjo's own published Datom files (G1 upstream-only) — never a
   paid terminal, never a web fetch. No credentials, no network."
