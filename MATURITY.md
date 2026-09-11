@@ -10,8 +10,8 @@ Honest R0 status, same discipline as kanjo's own MATURITY.md. Per ADR-2607202000
 | MetsukeGovernor (`policy.cljc`) | **runnable, unit-tested, adversarially tested** — `metsuke.policy-test` hand-constructs a proposal violating EACH hard check (missing citation, out-of-catalog citation, individual-shaped field, wrong subject kind, banned predicate, unhedged text) and asserts rejection; also asserts the G6 invariant that `:flagged?` forces `:hold` even on an otherwise-clean proposal. |
 | Lexicon discipline (`lexicon.cljc`) | **runnable, unit-tested** — banned-predicate (JP+EN) and missing-hedge-marker checks, both deterministic regex, no LLM call. |
 | Append-only ledger (`ledger.cljc`) | **runnable, unit-tested** — chain hashing + `validate-chain` proven to detect an in-place mutation of a prior entry. |
-| End-to-end pipeline (`pipeline.cljc`) | **runnable, unit-tested against BOTH a synthetic fixture AND kanjo's real 722-filing dataset** (`bin/metsuke.cljs` run manually against kanjo's `data/facts.merged.kotoba.edn` produces real scored rows — this is a real integration, not a mock). |
-| G-Plan historical test fixture | **exists, proven to flag** — `test/metsuke/fixtures/gplan_fy2025.cljc` reproduces G-Plan's own public FY2025/3 headline figures; `metsuke.score-test/gplan-fixture-flags-test` asserts composite-z >= FLAG-THRESHOLD relative to 5 synthetic non-anomalous peers. |
+| End-to-end pipeline (`pipeline.cljc`) | **runnable, unit-tested against BOTH a synthetic fixture AND kanjo's real 722-filing dataset** (`bin/metsuke.cljk` run manually against kanjo's `data/facts.merged.kotoba.edn` produces real scored rows — this is a real integration, not a mock). |
+| G-Plan historical test fixture | **exists, proven to flag** — `test/metsuke/fixtures/gplan_fy2025.cljk` reproduces G-Plan's own public FY2025/3 headline figures; `metsuke.score-test/gplan-fixture-flags-test` asserts composite-z >= FLAG-THRESHOLD relative to 5 synthetic non-anomalous peers. |
 
 ## What is NOT done (by design at R0, honestly listed)
 

@@ -9,7 +9,7 @@
   (pipeline.cljc is the ONLY caller of the scoring/ledger machinery; this
   namespace is downstream of its output, not a second scorer).
 
-  Pure `.cljc` — no file I/O (that stays in `bin/report.cljs`, the thin nbb
+  Pure `.cljc` — no file I/O (that stays in `bin/report.cljk`, the thin nbb
   wrapper, mirroring `metsuke.io`'s G1 read-seam-only convention). Kept
   deliberately in metsuke's own hedged, falsifiable-hypothesis vocabulary
   (G2/G5/G6, `metsuke.lexicon`) — a flagged row here is a STATISTICAL
@@ -95,7 +95,7 @@
   `metsuke.llm/draft-narrative-proposal`'s template."
   (str "**Statistical observation only.** Every row below is a statistical "
        "anomaly candidate for closer review under this actor's deterministic "
-       "composite z-score (see `src/metsuke/methods/score.cljc`) — a "
+       "composite z-score (see `src/metsuke/methods/score.cljk`) — a "
        "falsifiable hypothesis, not a finding. This does NOT establish that "
        "wrongdoing occurred; whether wrongdoing occurred is outside this "
        "actor's scope and cannot be determined from public filings alone "

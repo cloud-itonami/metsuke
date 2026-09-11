@@ -2,7 +2,7 @@
 
 **kanjo data snapshot:** commit `9834c1ff59450c6199fe7b002ec2b3d25f5a5189` (https://github.com/etzhayyim/com-etzhayyim-kanjo/commit/9834c1ff59450c6199fe7b002ec2b3d25f5a5189)
 
-**Statistical observation only.** Every row below is a statistical anomaly candidate for closer review under this actor's deterministic composite z-score (see `src/metsuke/methods/score.cljc`) — a falsifiable hypothesis, not a finding. This does NOT establish that wrongdoing occurred; whether wrongdoing occurred is outside this actor's scope and cannot be determined from public filings alone (kanjo G2/N4, metsuke G2/G6 — both reaffirmed, unweakened by this report).
+**Statistical observation only.** Every row below is a statistical anomaly candidate for closer review under this actor's deterministic composite z-score (see `src/metsuke/methods/score.cljk`) — a falsifiable hypothesis, not a finding. This does NOT establish that wrongdoing occurred; whether wrongdoing occurred is outside this actor's scope and cannot be determined from public filings alone (kanjo G2/N4, metsuke G2/G6 — both reaffirmed, unweakened by this report).
 
 ## Summary
 

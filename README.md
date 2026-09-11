@@ -25,12 +25,12 @@ scorer runs against any company-fiscal-year row kanjo has ingested.
 
 ```
   com-etzhayyim-kanjo (unmodified)          com-etzhayyim-metsuke (this repo)
-  :fin.filing/* :fin.fact/*                 src/metsuke/io.cljs        — the ONLY file-reading seam (G1)
-  :fin.metric/* :fin.agg/*        ────►      src/metsuke/methods/score.cljc — deterministic composite z (no LLM)
-  (published Datom graph,                    src/metsuke/llm.cljc       — sealed advisor, PROPOSALS only
-   G2 non-adjudicating, N4                   src/metsuke/methods/policy.cljc — MetsukeGovernor (G1/G3/G4/G5 HARD)
-   NOT fraud/solvency adjudication            src/metsuke/methods/ledger.cljc — append-only audit log (G7)
-   — both REAFFIRMED unweakened)             src/metsuke/pipeline.cljc  — wires all of the above; the ONLY
+  :fin.filing/* :fin.fact/*                 src/metsuke/io.cljk        — the ONLY file-reading seam (G1)
+  :fin.metric/* :fin.agg/*        ────►      src/metsuke/methods/score.cljk — deterministic composite z (no LLM)
+  (published Datom graph,                    src/metsuke/llm.cljk       — sealed advisor, PROPOSALS only
+   G2 non-adjudicating, N4                   src/metsuke/methods/policy.cljk — MetsukeGovernor (G1/G3/G4/G5 HARD)
+   NOT fraud/solvency adjudication            src/metsuke/methods/ledger.cljk — append-only audit log (G7)
+   — both REAFFIRMED unweakened)             src/metsuke/pipeline.cljk  — wires all of the above; the ONLY
                                               caller of ledger/append
 ```
 
@@ -62,25 +62,25 @@ composite-z = z(revenue YoY) + z(operating-income YoY) + z(total-assets YoY) + z
 
 z is computed against the company's OWN trailing history when >= 3 prior fiscal years are available;
 otherwise against a **market-wide** (not sector-specific — kanjo carries no sector dimension on
-`:fin.fact` itself, see `src/metsuke/facts.cljc`) same-fiscal-year peer distribution, when >= 5 peer
-observations exist. `FLAG-THRESHOLD` (composite-z >= 6.0, see `src/metsuke/methods/score.cljc`
+`:fin.fact` itself, see `src/metsuke/facts.cljk`) same-fiscal-year peer distribution, when >= 5 peer
+observations exist. `FLAG-THRESHOLD` (composite-z >= 6.0, see `src/metsuke/methods/score.cljk`
 docstring for the rationale) is a named, documented constant, not a bare magic number.
 
 ## Run
 
 ```bash
-nbb test/run_tests.cljs                          # 31 tests / 103 assertions, offline, no kanjo checkout needed
-nbb bin/metsuke.cljs ../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn   # score kanjo's real published data
+nbb test/run_tests.cljk                          # 31 tests / 103 assertions, offline, no kanjo checkout needed
+nbb bin/metsuke.cljk ../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn   # score kanjo's real published data
 ```
 
 ## Test fixture — public historical record, not a live claim
 
-`test/metsuke/fixtures/gplan_fy2025.cljc` reproduces G-Plan's own PUBLIC, already-disclosed FY2025/3
+`test/metsuke/fixtures/gplan_fy2025.cljk` reproduces G-Plan's own PUBLIC, already-disclosed FY2025/3
 headline figures (the numbers above) as a unit-test fixture, proving the scorer places that row in the
 flagged tier relative to 5 synthetic, clearly-labeled non-anomalous peer companies. This is a unit
 test of the scoring math — not a narrative document, not a standalone accusation, and not exercised
 outside the MetsukeGovernor's own test path (which always ends in `:hold`, see
-`test/metsuke/pipeline_test.cljc`).
+`test/metsuke/pipeline_test.cljk`).
 
 ## R0 honesty — see MATURITY.md
 

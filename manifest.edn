@@ -18,23 +18,23 @@
   boundary this actor keeps by construction."
  :actor/cells
  [{"id" "cell:metsuke.score"
-   "method" "src/metsuke/methods/score.cljc"
+   "method" "src/metsuke/methods/score.cljk"
    "input" "kanjo :fin.fact/* rows (own trailing history >= 3 prior FY, else market-wide same-FY peer distribution from the same kanjo dataset — G1 upstream-only, no sector-linkage data source is read)"
    "output" ["composite z-score per company-fiscal-year" "citations to the kanjo :fin.fact/:fin.filing ids the score was derived from"]
    "pipeline" "kanjo facts -> per-company-year revenue/operating-income/total-assets/operating-margin -> YoY (or trailing z) -> composite z = sum of 4 axis z-scores -> :flagged? at named threshold (G6 HOLD-by-construction for flagged rows)"
    "gate" "G8 — peer n below MIN-PEER-N falls back to the company's own trailing-history z (>= 3 prior FY); if neither is available the row is marked :low-confidence, never a fabricated distribution"}
   {"id" "cell:metsuke.narrate"
-   "method" "src/metsuke/llm.cljc"
+   "method" "src/metsuke/llm.cljk"
    "input" "a :flagged? score row + its citations (Metsuke-LLM proposal ONLY)"
    "output" ["hedged, falsifiable-hypothesis narrative proposal (never committed directly — see policy.cljc)"]
    "pipeline" "score row -> template-bound hedged sentence (allow-list framings only, G5) -> MetsukeGovernor check (G1/G3/G4/G5 hard, G6 structural) -> append-only ledger entry, disposition ALWAYS :hold for flagged rows (R0 has no code path past :hold)"
    "gate" "G5 — deterministic banned-predicate + missing-hedge-marker check runs BEFORE the proposal can even reach HOLD state; a declarative fraud assertion or an unhedged sentence is rejected outright, not merely flagged"}]
  :actor/gates
- [#:gate{:id "G1" :rule "upstream-only — reads ONLY kanjo's published :fin.fact/:fin.metric/:fin.agg Datoms (local data/facts.merged.kotoba.edn-shaped input or the documented src/metsuke/io.cljs read seam) plus its own derived :metsuke.score/*. No other data source, no paid terminals (same G1 lineage as kanjo)."}
+ [#:gate{:id "G1" :rule "upstream-only — reads ONLY kanjo's published :fin.fact/:fin.metric/:fin.agg Datoms (local data/facts.merged.kotoba.edn-shaped input or the documented src/metsuke/io.cljk read seam) plus its own derived :metsuke.score/*. No other data source, no paid terminals (same G1 lineage as kanjo)."}
   #:gate{:id "G2" :rule "non-adjudicating, hypothesis-only — never asserts fraud occurred. Every narrative sentence is a hedged, falsifiable hypothesis, never a verdict. Sibling of kanjo G2 / danjo."}
-  #:gate{:id "G3" :rule "source-basis (HARD, code-enforced) — every scored row and every narrative sentence must cite the specific kanjo Datom ids (:fin.fact/id / :fin.filing/id) it was derived from. A proposal with no citation is rejected, not just flagged. src/metsuke/methods/policy.cljc :source-basis check."}
+  #:gate{:id "G3" :rule "source-basis (HARD, code-enforced) — every scored row and every narrative sentence must cite the specific kanjo Datom ids (:fin.fact/id / :fin.filing/id) it was derived from. A proposal with no citation is rejected, not just flagged. src/metsuke/methods/policy.cljk :source-basis check."}
   #:gate{:id "G4" :rule "no named individuals (HARD, code-enforced) — schema has no field for officer/director/individual data, company-level only (mirrors kanjo G9 / cloud-itonami-isic-8291's scope-gate). Defense in depth: a schema-shape guarantee (no such field exists to fill) PLUS a runtime check in policy.cljc that rejects any proposal carrying an individual-shaped key."}
-  #:gate{:id "G5" :rule "lexicon discipline (HARD, code-enforced, deterministic regex/keyword check — NOT an LLM instruction) — narrative text is checked against a banned-predicate list (declarative fraud assertions, JP+EN) AND must contain at least one allow-list hedge marker, before it can even reach HOLD state. src/metsuke/lexicon.cljc."}
+  #:gate{:id "G5" :rule "lexicon discipline (HARD, code-enforced, deterministic regex/keyword check — NOT an LLM instruction) — narrative text is checked against a banned-predicate list (declarative fraud assertions, JP+EN) AND must contain at least one allow-list hedge marker, before it can even reach HOLD state. src/metsuke/lexicon.cljk."}
   #:gate{:id "G6" :rule "always-escalate, never-auto-publish (SOFT but structurally mandatory) — any company-year row whose composite anomaly score crosses the flagged threshold is a HOLD by construction; there is no code path that auto-releases a flagged row in R0. Mirrors kanjo's own Council-gate philosophy and cloud-itonami-isic-8291's high-stakes-always-escalate. The human/Council release step itself is NOT built at R0 — documented as a follow-up in MATURITY.md."}
   #:gate{:id "G7" :rule "append-only audit ledger — every score computed and every narrative HOLD/decision is written to a content-addressed, append-only local ledger (src/metsuke/ledger.cljc) — never mutated in place, same shape as kanjo's Datom log / kosatsu's identity journal."}
   #:gate{:id "G8" :rule "sourcing honesty on coverage — the same :fin.agg/n coverage-bounded honesty kanjo enforces (kanjo G5): never treat a small/thin peer sample as a full population. If peer-group n is too small for a market-wide z-score, fall back to the company's own trailing-history z-score only (>= 3 prior FY); if neither is available the row is marked :low-confidence and says so, never a fabricated distribution."}]

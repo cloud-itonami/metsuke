@@ -1,6 +1,6 @@
 #!/usr/bin/env nbb
 ;; metsuke CLI — thin nbb wrapper around metsuke.pipeline/process-facts.
-;; Usage: nbb bin/metsuke.cljs <path-to-kanjo-facts.merged.kotoba.edn>
+;; Usage: nbb bin/metsuke.cljk <path-to-kanjo-facts.merged.kotoba.edn>
 ;;
 ;; Prints a summary (row count, flagged count, low-confidence count) and how
 ;; many ledger entries would be :hold vs :recorded. Does NOT publish or
@@ -13,7 +13,7 @@
 
 (let [path (first *command-line-args*)]
   (if-not path
-    (do (println "usage: nbb bin/metsuke.cljs <path-to-kanjo-facts.merged.kotoba.edn>")
+    (do (println "usage: nbb bin/metsuke.cljk <path-to-kanjo-facts.merged.kotoba.edn>")
         (js/process.exit 1))
     (let [facts (io/read-kanjo-fact-rows path)
           filings (io/read-kanjo-filings path)

@@ -1,11 +1,11 @@
 #!/usr/bin/env nbb
 ;; metsuke report CLI — thin nbb wrapper around metsuke.pipeline/process-facts
 ;; + metsuke.methods.report (same G1 read-seam-only convention as
-;; bin/metsuke.cljs; this does not re-implement any scoring logic, it only
-;; formats the SAME process-facts output bin/metsuke.cljs already prints).
+;; bin/metsuke.cljk; this does not re-implement any scoring logic, it only
+;; formats the SAME process-facts output bin/metsuke.cljk already prints).
 ;;
 ;; Writes a persisted, git-diffable, history-keeping report so a CI loop can
-;; open a PR from it (bin/metsuke.cljs alone only prints to stdout, which a
+;; open a PR from it (bin/metsuke.cljk alone only prints to stdout, which a
 ;; workflow can't diff/commit). Every run:
 ;;   - reports/latest-scan.md   (overwritten — always the newest snapshot)
 ;;   - reports/scans/<date>.md  (NEVER overwritten — one file per scan date;
@@ -14,7 +14,7 @@
 ;;   - reports/latest-scan.edn  (machine-readable sidecar; next run's --prev-edn)
 ;;
 ;; Usage:
-;;   nbb bin/report.cljs <path-to-kanjo-facts.merged.kotoba.edn> \
+;;   nbb bin/report.cljk <path-to-kanjo-facts.merged.kotoba.edn> \
 ;;     [--kanjo-sha SHA] [--kanjo-commit-url URL] [--out-dir DIR] [--prev-edn PATH]
 ;;
 ;; --kanjo-sha SHA        commit SHA of the kanjo data snapshot being scanned
@@ -47,7 +47,7 @@
 (defn -main [args]
   (let [path (first args)]
     (if-not path
-      (do (println "usage: nbb bin/report.cljs <path-to-kanjo-facts.merged.kotoba.edn> [--kanjo-sha SHA] [--kanjo-commit-url URL] [--out-dir DIR] [--prev-edn PATH]")
+      (do (println "usage: nbb bin/report.cljk <path-to-kanjo-facts.merged.kotoba.edn> [--kanjo-sha SHA] [--kanjo-commit-url URL] [--out-dir DIR] [--prev-edn PATH]")
           (js/process.exit 1))
       (let [kanjo-sha (arg args "--kanjo-sha" "unknown")
             kanjo-commit-url (arg args "--kanjo-commit-url" nil)
