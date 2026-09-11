@@ -2,8 +2,8 @@
 ;; priority: kotoba wasm > clojurewasm > ClojureScript > nbb, JVM/bb
 ;; downgraded). This deps.edn is a compat shim ONLY, so a JVM `clojure`
 ;; invocation can lint/run the .cljc as plain Clojure if ever needed — the
-;; canonical way to run this repo's tests is `nbb test/run_tests.cljk`
-;; (see README.md), not `clojure -M:test`.
+;; canonical way to run this repo's tests is `kbb --backend sci test/run_tests.cljk`
+;; (see README.md), not `kbb -M:test`.
 {:paths ["src" "test"]
  :deps {
         ;; kotoba.lang.text, not clojure.string. Pinned as an explicit floor:

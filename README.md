@@ -69,8 +69,8 @@ docstring for the rationale) is a named, documented constant, not a bare magic n
 ## Run
 
 ```bash
-nbb test/run_tests.cljk                          # 31 tests / 103 assertions, offline, no kanjo checkout needed
-nbb bin/metsuke.cljk ../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn   # score kanjo's real published data
+kbb --backend sci test/run_tests.cljk                          # 31 tests / 103 assertions, offline, no kanjo checkout needed
+kbb --backend sci bin/metsuke.cljk ../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn   # score kanjo's real published data
 ```
 
 ## Test fixture — public historical record, not a live claim

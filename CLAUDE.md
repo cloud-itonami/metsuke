@@ -81,8 +81,8 @@ its own R0).
 ## Run
 
 ```bash
-nbb test/run_tests.cljk                                                    # 31 tests / 103 assertions, offline
-nbb bin/metsuke.cljk ../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn    # score kanjo's real published data (needs a sibling kanjo checkout)
+kbb --backend sci test/run_tests.cljk                                                    # 31 tests / 103 assertions, offline
+kbb --backend sci bin/metsuke.cljk ../com-etzhayyim-kanjo/data/facts.merged.kotoba.edn    # score kanjo's real published data (needs a sibling kanjo checkout)
 ```
 
 ## Honesty (R0)
