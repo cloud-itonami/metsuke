@@ -1,5 +1,5 @@
 (ns metsuke.score-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [kotoba.test :refer [deftest testing is]]
             [metsuke.methods.score :as score]
             [metsuke.fixtures.gplan-fy2025 :as fx]))
 

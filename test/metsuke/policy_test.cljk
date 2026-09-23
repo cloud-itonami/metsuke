@@ -2,7 +2,7 @@
   "Adversarial governor tests — hand-constructed proposals designed to
   violate each HARD check, proving the MetsukeGovernor (not the generator's
   good behavior) is what actually enforces G1/G3/G4/G5/G6."
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [kotoba.test :refer [deftest testing is]]
             [clojure.set :as set]
             [metsuke.methods.policy :as policy]))
 
