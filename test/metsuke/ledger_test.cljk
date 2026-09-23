@@ -1,5 +1,5 @@
 (ns metsuke.ledger-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [kotoba.test :refer [deftest testing is]]
             [metsuke.methods.ledger :as ledger]))
 
 (deftest append-only-chain-test

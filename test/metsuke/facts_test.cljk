@@ -1,5 +1,5 @@
 (ns metsuke.facts-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [kotoba.test :refer [deftest testing is]]
             [metsuke.facts :as facts]))
 
 (deftest allowed-classes-test

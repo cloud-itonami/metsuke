@@ -1,5 +1,5 @@
 (ns metsuke.report-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [kotoba.test :refer [deftest testing is]]
             [kotoba.lang.text :as str]
             [metsuke.methods.report :as report]
             [metsuke.lexicon :as lexicon]))
