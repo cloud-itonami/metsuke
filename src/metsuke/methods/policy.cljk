@@ -31,7 +31,7 @@
   release step is a SEPARATE, not-yet-built process outside this codebase
   (MATURITY.md), which is exactly what makes `:hold` here a true terminal
   state in R0, not a queue waiting on code that already exists."
-  (:require [clojure.set :as set]
+  (:require [kotoba.lang.coll :as set]
             [metsuke.facts :as facts]
             [metsuke.lexicon :as lexicon]))
 

@@ -3,7 +3,7 @@
   violate each HARD check, proving the MetsukeGovernor (not the generator's
   good behavior) is what actually enforces G1/G3/G4/G5/G6."
   (:require [kotoba.test :refer [deftest testing is]]
-            [clojure.set :as set]
+            [kotoba.lang.coll :as set]
             [metsuke.methods.policy :as policy]))
 
 (def clean-proposal
