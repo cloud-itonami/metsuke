@@ -18,7 +18,7 @@
   Only reads kanjo's own published Datom files (G1 upstream-only) — never a
   paid terminal, never a web fetch. No credentials, no network."
   (:require ["node:fs" :as fs]
-            [clojure.edn :as edn]))
+            [kotoba.lang.edn :as edn]))
 
 (defn slurp-edn
   "Reads `path` and edn/read-string's it. Throws if the file doesn't exist
