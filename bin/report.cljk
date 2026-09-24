@@ -32,7 +32,7 @@
 ;; (a CI workflow step greps this to decide whether to open a PR — see
 ;; .github/workflows/rescan.yml).
 (require '["node:fs" :as fs]
-         '[clojure.edn :as edn]
+         '[kotoba.lang.edn :as edn]
          '[metsuke.io :as io]
          '[metsuke.pipeline :as pipeline]
          '[metsuke.methods.report :as report])
