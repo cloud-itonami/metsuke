@@ -6,7 +6,7 @@
   as a :hold entry — never any external disclosure surface (there is no
   such surface built in R0)."
   (:require [kotoba.test :refer [deftest testing is]]
-            [clojure.set :as set]
+            [kotoba.lang.coll :as set]
             [metsuke.pipeline :as pipeline]
             [metsuke.methods.ledger :as ledger]
             [metsuke.fixtures.gplan-fy2025 :as fx]))
