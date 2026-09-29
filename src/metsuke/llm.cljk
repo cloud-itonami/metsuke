@@ -12,7 +12,7 @@
   generator's good behavior) is what actually enforces G5.
 
   Wiring a real generative model here (e.g. via murakumo-main, per root
-  CLAUDE.md's LLM alias convention) is an explicit R1+ follow-up
+  AGENTS.md's LLM alias convention) is an explicit R1+ follow-up
   (MATURITY.md) — the template below is deliberately conservative rather
   than fluent."
   (:require [metsuke.lexicon :as lexicon]))

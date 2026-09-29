@@ -7,7 +7,7 @@
   platform-specific, the same exception kanjo/dossier take for their own
   I/O seams (`dossier/companies_house.clj`, plain `.clj` for the same
   reason). This is the highest-priority runtime that CAN do file I/O per
-  root CLAUDE.md's `.cljc`/runtime ladder (nbb, not JVM/bb).
+  root AGENTS.md's `.cljc`/runtime ladder (nbb, not JVM/bb).
 
   Usage (from a repo checkout where kanjo is a sibling west project, the
   normal superproject layout `orgs/etzhayyim/{com-etzhayyim-kanjo,
