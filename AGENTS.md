@@ -2,7 +2,7 @@
 
 > Statistical anomaly-detection framework for public-company financial disclosures. Tier-B, R0
 > design-only. ADR-2607202000.
-> Read the repo-root `CLAUDE.md` (in the `com-junkawasaki/root` superproject) first; this file only
+> Read the repo-root `AGENTS.md` (in the `com-junkawasaki/root` superproject) first; this file only
 > adds actor-local rules.
 
 ## Identity
